@@ -1,54 +1,46 @@
-turtles-own [ feliz? ]
+patches-own [
+  estado
+  vecinos_estado1
+]
 
 
 to setup
   clear-all
 
-  create-turtles round( ( world-width * world-height )* densidad ) [
-    let colores  [  yellow red green blue brown pink white violet magenta cyan gray]
-    let cantidad 11 - grupos
-    repeat cantidad [ set colores remove-item 0 colores ]
-    set color one-of colores
-    set size 0.75
-    move-to one-of patches with [ not any? turtles-here ]      ]
-
-  ask turtles [
-    set feliz? soy_feliz?
-    ifelse feliz? [ set shape "circle" ] [ set shape "X" ]
+  ask patches [
+    set estado 0
+    if  random-float 1.0 < prop_estado1 [set estado 1]
+    if random-float 1.0 < prop_estado2 [set estado 2]
   ]
-
+  colorear_celdas
   reset-ticks
+end
+
+
+to colorear_celdas
+  ask patches [
+    if estado = 1 [ set pcolor magenta ]
+    if estado = 2 [ set pcolor pink ]
+    if estado = 0 [ set pcolor black ]
+  ]
 end
 
 
 
 
 to go
-  if not any? turtles with [ not feliz? ] [ stop ]
+  ask patches [
+    set vecinos_estado1 count neighbors with [ estado = 1 ]
+  ]
+  ask patches [
+    (ifelse
+      estado = 1 [ set estado 2 ]
+      estado = 2 [ set estado 0 ]
+      estado = 0 [ if vecinos_estado1 > 0 [set estado 1] ] )
+  ]
+  colorear_celdas
 
-  ask turtles [
-    if not feliz?  [
-      move-to one-of patches with [ not any? turtles-here ]
-    ]
-  ]
-  ask turtles [
-    set feliz? soy_feliz?
-    ifelse feliz? [ set shape "circle" ] [ set shape "X" ]
-  ]
   tick
-end
-
-
-
-
-
-
-to-report soy_feliz?
-  let num_vecinos count ( turtles-on neighbors )
-  let num_vecinos_grupo count (turtles-on neighbors  ) with [ color = [ color ] of myself  ]
-  ifelse num_vecinos_grupo >= num_vecinos * preferencia / 100
-  [ report true  ]
-  [ report false ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -72,17 +64,17 @@ GRAPHICS-WINDOW
 16
 -16
 16
-1
-1
+0
+0
 1
 ticks
 30.0
 
 BUTTON
-67
-65
-130
-98
+40
+33
+103
+66
 NIL
 setup
 NIL
@@ -96,10 +88,10 @@ NIL
 1
 
 BUTTON
-67
-124
-130
-157
+37
+86
+100
+119
 NIL
 go
 T
@@ -113,69 +105,45 @@ NIL
 1
 
 SLIDER
-8
-179
-180
-212
-densidad
-densidad
+19
+141
+191
+174
+prop_estado1
+prop_estado1
 0
-0.99
-0.55
+1
+0.29
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-9
-232
-181
-265
-preferencia
-preferencia
+18
+193
+190
+226
+prop_estado2
+prop_estado2
 0
-100
-11.0
 1
-1
-%
-HORIZONTAL
-
-PLOT
-690
-53
-1035
-295
-felices
-tiempo
-número felices
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot count turtles with [ feliz? ]"
-
-SLIDER
-9
-289
-181
-322
-grupos
-grupos
-2
-11
-10.0
-1
+0.32
+0.01
 1
 NIL
 HORIZONTAL
 
 @#$#@#$#@
+Greenberg–Hastings cellular automaton 
+
+At each "time" t=0,1,2,3,...., each cell is assigned one of three "states", typically called "resting" (or "quiescent" ), "excited", or "refractory". The assignment of states for all cells is arbitrary for t = 0, and then at subsequent times the state of each cell is determined by the following rules: 
+
+1. If a cell is in the excited state at time t then it is in the refractory state at time t+1.
+
+2. If a cell is in the refractory state at time t then it is in the resting state at time t+1.
+
+3. If a given cell is in the resting state at time t and at least one of its neighbors is in the excited state at time t, then the given cell is in the excited state at time t+1, otherwise (no neighbor is excited at time t) it remains in the resting state at time t+1.
 @#$#@#$#@
 default
 true
