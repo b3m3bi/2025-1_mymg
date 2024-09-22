@@ -1,52 +1,54 @@
-patches-own [
-  tipo
-]
-
-
-
-
 to setup
   clear-all
+
   ask patches [
-    set tipo 0
-    if random-float 1.0 < prop_arena [set tipo 1]
+    set pcolor one-of [red yellow blue]
   ]
-  colorear_celdas
+
   reset-ticks
 end
 
 
+to go
+  ;;celda al azar
+  ask one-of patches [
+    ;;otra celda
+    let mi_competidor one-of other patches
+    if tipo_interaccion = "local" [
+      set mi_competidor one-of neighbors
+    ]
 
-to colorear_celdas
-  ask patches [
-    if tipo = 0 [ set pcolor blue   ] ;; tipo cero es aire y color azul
-    if tipo = 1 [ set pcolor brown ] ;; tipo uno es arena y color cafe
+    ;; revisar si yo gano
+    ifelse le_gano? mi_competidor [
+      ;;sí gano, lo invado
+      ask mi_competidor [ set pcolor [pcolor] of myself ]
+    ][ ;; si el competidor gana
+      if [le_gano? myself ] of mi_competidor [ set pcolor [pcolor] of mi_competidor ]
+    ]
+
   ]
+
+  tick
 end
 
 
-to go
-  ask patches with [tipo = 1 ] [
-    (ifelse
-      [tipo] of patch-at 0 -1  = 0 [ set tipo 0 ask patch-at 0 -1 [set tipo 1 ]]
-      [tipo] of patch-at 1 -1  = 0 [ set tipo 0 ask patch-at 1 -1 [set tipo 1 ]]
-      [tipo] of patch-at -1 -1  = 0 [set tipo 0 ask patch-at -1 -1 [set tipo 1 ]]
-
-    )
-  ]
-
-  colorear_celdas
-  tick
+to-report le_gano? [ el_otro ]
+  (ifelse
+    pcolor = red and [pcolor] of el_otro = blue and random-float 1.0 < p_r [report true]
+    pcolor = blue and [pcolor] of el_otro = yellow and random-float 1.0 < p_b [report true]
+    pcolor = yellow and [pcolor] of el_otro = red and random-float 1.0 < p_y [report true]
+    [report false ]
+  )
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-828
-629
+647
+448
 -1
 -1
-10.0
+13.0
 1
 10
 1
@@ -56,10 +58,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--30
-30
--30
-30
+-16
+16
+-16
+16
 0
 0
 1
@@ -67,12 +69,12 @@ ticks
 30.0
 
 BUTTON
-35
-49
-98
-82
+85
+105
+148
+138
 NIL
-setup\n
+setup
 NIL
 1
 T
@@ -84,10 +86,10 @@ NIL
 1
 
 BUTTON
-33
-105
-96
-138
+88
+154
+151
+187
 NIL
 go
 T
@@ -101,21 +103,116 @@ NIL
 1
 
 SLIDER
-13
-155
-185
-188
-prop_arena
-prop_arena
+14
+206
+186
+239
+p_r
+p_r
 0
 1
-0.236
-0.001
+0.68
+0.01
 1
 NIL
 HORIZONTAL
 
+SLIDER
+15
+254
+187
+287
+p_b
+p_b
+0
+1
+0.42
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+13
+305
+185
+338
+p_y
+p_y
+0
+1
+0.66
+0.01
+1
+NIL
+HORIZONTAL
+
+PLOT
+763
+10
+1222
+289
+poblaciones
+tiempo
+N
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -2674135 true "" "plot count patches with [pcolor = red]"
+"pen-1" 1.0 0 -13345367 true "" "plot count patches with [pcolor = blue ]"
+"pen-2" 1.0 0 -1184463 true "" "plot count patches with [pcolor = yellow]"
+
+CHOOSER
+16
+356
+154
+401
+tipo_interaccion
+tipo_interaccion
+"global" "local"
+1
+
 @#$#@#$#@
+## WHAT IS IT?
+
+(a general understanding of what the model is trying to show or explain)
+
+## HOW IT WORKS
+
+(what rules the agents use to create the overall behavior of the model)
+
+## HOW TO USE IT
+
+(how to use the model, including a description of each of the items in the Interface tab)
+
+## THINGS TO NOTICE
+
+(suggested things for the user to notice while running the model)
+
+## THINGS TO TRY
+
+(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+
+## EXTENDING THE MODEL
+
+(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+
+## NETLOGO FEATURES
+
+(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+
+## RELATED MODELS
+
+(models in the NetLogo Models Library and elsewhere which are of related interest)
+
+## CREDITS AND REFERENCES
+
+(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
 @#$#@#$#@
 default
 true
