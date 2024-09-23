@@ -10,45 +10,32 @@ end
 
 
 to go
-  ;;celda al azar
-  ask one-of patches [
-    ;;otra celda
-    let mi_competidor one-of other patches
-    if tipo_interaccion = "local" [
-      set mi_competidor one-of neighbors
-    ]
+  ;;todas las celdas
+  ask patches [
+    let vecinos_rojos count neighbors with [ pcolor = red  ]
+    let vecinos_amarillos count neighbors with [ pcolor = yellow  ]
+    let vecinos_azules count neighbors with [ pcolor = blue  ]
 
-    ;; revisar si yo gano
-    ifelse le_gano? mi_competidor [
-      ;;sí gano, lo invado
-      ask mi_competidor [ set pcolor [pcolor] of myself ]
-    ][ ;; si el competidor gana
-      if [le_gano? myself ] of mi_competidor [ set pcolor [pcolor] of mi_competidor ]
-    ]
+    (ifelse
+      pcolor = blue and vecinos_rojos >= criterio_vecinos [ set pcolor red ] ;;rojo gana azul
+      pcolor = yellow and vecinos_azules >= criterio_vecinos [ set pcolor blue ] ;; azul gana amarillo
+      pcolor = red and vecinos_amarillos >= criterio_vecinos [ set pcolor yellow ] ;; amarillo gana rojo
+    )
 
   ]
 
   tick
 end
 
-
-to-report le_gano? [ el_otro ]
-  (ifelse
-    pcolor = red and [pcolor] of el_otro = blue and random-float 1.0 < p_r [report true]
-    pcolor = blue and [pcolor] of el_otro = yellow and random-float 1.0 < p_b [report true]
-    pcolor = yellow and [pcolor] of el_otro = red and random-float 1.0 < p_y [report true]
-    [report false ]
-  )
-end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-647
-448
+821
+622
 -1
 -1
-13.0
+3.0
 1
 10
 1
@@ -58,10 +45,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-100
+100
+-100
+100
 0
 0
 1
@@ -103,79 +90,19 @@ NIL
 1
 
 SLIDER
-14
-206
-186
-239
-p_r
-p_r
-0
+12
+211
+184
+244
+criterio_vecinos
+criterio_vecinos
 1
-1.0
-0.01
+8
+8.0
 1
-NIL
-HORIZONTAL
-
-SLIDER
-15
-254
-187
-287
-p_b
-p_b
-0
-1
-1.0
-0.01
 1
 NIL
 HORIZONTAL
-
-SLIDER
-13
-305
-185
-338
-p_y
-p_y
-0
-1
-0.3
-0.01
-1
-NIL
-HORIZONTAL
-
-PLOT
-763
-10
-1222
-289
-poblaciones
-tiempo
-N
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -2674135 true "" "plot count patches with [pcolor = red]"
-"pen-1" 1.0 0 -13345367 true "" "plot count patches with [pcolor = blue ]"
-"pen-2" 1.0 0 -1184463 true "" "plot count patches with [pcolor = yellow]"
-
-CHOOSER
-16
-356
-154
-401
-tipo_interaccion
-tipo_interaccion
-"global" "local"
-0
 
 @#$#@#$#@
 @#$#@#$#@

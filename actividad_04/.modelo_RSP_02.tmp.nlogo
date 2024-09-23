@@ -2,7 +2,7 @@ to setup
   clear-all
 
   ask patches [
-    set pcolor one-of [red yellow blue]
+    set pcolor one-of [red yellow blue black]
   ]
 
   reset-ticks
@@ -10,23 +10,47 @@ end
 
 
 to go
-  ;;celda al azar
-  ask one-of patches [
-    ;;otra celda
-    let mi_competidor one-of other patches
-    if tipo_interaccion = "local" [
-      set mi_competidor one-of neighbors
-    ]
 
-    ;; revisar si yo gano
-    ifelse le_gano? mi_competidor [
-      ;;sí gano, lo invado
-      ask mi_competidor [ set pcolor [pcolor] of myself ]
-    ][ ;; si el competidor gana
-      if [le_gano? myself ] of mi_competidor [ set pcolor [pcolor] of mi_competidor ]
-    ]
+  let evento_seleccion 0
+  let evento_reproduccion 1
+  let evento_intercambio 2
 
+  ;; shuffle revuelve la lista; sentence, la junta; n-values repite ()-veces al elemento []; random-poisson con parametro __
+
+  let eventos  shuffle ( sentence
+    n-values ( random-poisson tasa_seleccion ) [ evento_seleccion ]
+    n-values ( random-poisson tasa_reproduccion )  [ evento_reproduccion ]
+    n-values ( random-poisson tasa_intercambio ) [ evento_intercambio ]
+  )
+
+  ;; recibe una lista, con cada elemnto de la lista realiza [ ]
+  foreach eventos [
+    evento ->
+    ask one-of patches [
+      let otra_celda one-of neighbors
+      if evento = evento_seleccion [ seleccion otra_celda ]
+      if evento = evento_reproduccion [ reproduccion otra_celda ]
+      if evento = evento_intercambio [ intercambiar otra_celda ]
+    ]
   ]
+
+
+;;  ;;celda al azar
+;;  ask one-of patches [
+;;    ;;otra celda
+;;    let otra_celda one-of neighbors
+
+    ;; calcular probabilidades de que ocurra el evento
+;;   let prob_reproduccion tasa_reproduccion / (tasa_reproduccion + tasa_seleccion +  tasa_intercambio )
+;;    let prob_seleccion tasa_seleccion / (tasa_reproduccion + tasa_seleccion +  tasa_intercambio )
+;;    let prob_intercambio tasa_intercambio / (tasa_reproduccion + tasa_seleccion +  tasa_intercambio )
+;;    let p random-float 1.0
+;;    (ifelse
+;;      0 <= p and p < prob_reproduccion [ reproduccion otra_celda  ]
+;;      prob_reproduccion <= p and p < prob_reproduccion + prob_seleccion [ seleccion otra_celda ]
+;;      prob_reproduccion +  prob_seleccion <= p and p < 1 [ intercambiar otra_celda ]
+;;    )
+;;  ]
 
   tick
 end
@@ -34,21 +58,44 @@ end
 
 to-report le_gano? [ el_otro ]
   (ifelse
-    pcolor = red and [pcolor] of el_otro = blue and random-float 1.0 < p_r [report true]
-    pcolor = blue and [pcolor] of el_otro = yellow and random-float 1.0 < p_b [report true]
-    pcolor = yellow and [pcolor] of el_otro = red and random-float 1.0 < p_y [report true]
+    pcolor = red and [pcolor] of el_otro = blue  [report true]
+    pcolor = blue and [pcolor] of el_otro = yellow  [report true]
+    pcolor = yellow and [pcolor] of el_otro = red  [report true]
     [report false ]
   )
+end
+
+to seleccion [ otra_celda ]
+  ;; revisar si yo gano
+    ifelse le_gano? otra_celda[
+      ;;sí gano, lo elimino
+      ask otra_celda[ set pcolor black ]
+    ][ ;; si el competidor gana, me elimina
+      if [le_gano? myself ] of otra_celda [ set pcolor black ]
+    ]
+end
+
+
+to reproduccion [otra_celda]
+  if [pcolor] of otra_celda = black [
+    ask otra_celda [ set pcolor [ pcolor]  of myself  ]
+  ]
+end
+
+to intercambiar [otra_celda ]
+  let mi_color_viejo pcolor
+  set pcolor [ pcolor ] of otra_celda
+  ask otra_celda [ set pcolor mi_color_viejo ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-647
-448
+521
+322
 -1
 -1
-13.0
+3.0
 1
 10
 1
@@ -58,10 +105,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+0
+100
+0
+100
 0
 0
 1
@@ -103,79 +150,49 @@ NIL
 1
 
 SLIDER
-14
-206
-186
-239
-p_r
-p_r
+21
+214
+193
+247
+tasa_seleccion
+tasa_seleccion
 0
+500
+100.0
 1
-1.0
-0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-15
-254
-187
-287
-p_b
-p_b
+23
+265
+195
+298
+tasa_reproduccion
+tasa_reproduccion
 0
+500
+100.0
 1
-1.0
-0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-13
-305
-185
-338
-p_y
-p_y
+22
+314
+194
+347
+tasa_intercambio
+tasa_intercambio
 0
+1000
+1000.0
 1
-0.3
-0.01
 1
 NIL
 HORIZONTAL
-
-PLOT
-763
-10
-1222
-289
-poblaciones
-tiempo
-N
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -2674135 true "" "plot count patches with [pcolor = red]"
-"pen-1" 1.0 0 -13345367 true "" "plot count patches with [pcolor = blue ]"
-"pen-2" 1.0 0 -1184463 true "" "plot count patches with [pcolor = yellow]"
-
-CHOOSER
-16
-356
-154
-401
-tipo_interaccion
-tipo_interaccion
-"global" "local"
-0
 
 @#$#@#$#@
 @#$#@#$#@
