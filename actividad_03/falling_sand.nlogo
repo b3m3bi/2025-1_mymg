@@ -1,3 +1,4 @@
+
 patches-own [
   tipo
 ]
@@ -26,11 +27,20 @@ end
 
 
 to go
+  ;; Luis: aquí nota que la actualización sincrónica no es necesaria, de hecho
+  ;; la actualización asincrónica le da un poco de aleatoriedad al modelo que
+  ;; hace que se vea más realista
   ask patches with [tipo = 1 ] [
+    ;; Luis: para que la arena no caiga infinitamente quité en settings
+    ;; la opción de que el mundo se enroque. Cuando uno hace eso tiene un
+    ;; error por el comando patch-at, esto pasa porque las celdas de hasta
+    ;; abajo ya no tienen a una celda vecina debajo de ellos, para eso
+    ;; en el ifelse también deber revisar si está definido o no, para eso se
+    ;; se revisa que la celda si esté definida revisando que no sea igual a nobody
     (ifelse
-      [tipo] of patch-at 0 -1  = 0 [ set tipo 0 ask patch-at 0 -1 [set tipo 1 ]]
-      [tipo] of patch-at 1 -1  = 0 [ set tipo 0 ask patch-at 1 -1 [set tipo 1 ]]
-      [tipo] of patch-at -1 -1  = 0 [set tipo 0 ask patch-at -1 -1 [set tipo 1 ]]
+      patch-at 0 -1 != nobody and [tipo] of patch-at 0 -1  = 0 [ set tipo 0 ask patch-at 0 -1 [set tipo 1 ]]
+      patch-at 1 -1 != nobody and [tipo] of patch-at 1 -1  = 0 [ set tipo 0 ask patch-at 1 -1 [set tipo 1 ]]
+      patch-at -1 -1 != nobody and [tipo] of patch-at -1 -1  = 0 [set tipo 0 ask patch-at -1 -1 [set tipo 1 ]]
 
     )
   ]
@@ -38,23 +48,35 @@ to go
   colorear_celdas
   tick
 end
+
+;; Luis: para que puedas picarle y que salga arena agrege este comando
+to dibujar
+  if mouse-down? [
+    ask patch mouse-xcor mouse-ycor [
+      ask patches in-radius 2 [
+        set tipo 1
+      ]
+    ]
+    colorear_celdas
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-828
-629
+584
+385
 -1
 -1
-10.0
+6.0
 1
 10
 1
 1
 1
 0
-1
-1
+0
+0
 1
 -30
 30
@@ -109,11 +131,28 @@ prop_arena
 prop_arena
 0
 1
-0.236
+0.083
 0.001
 1
 NIL
 HORIZONTAL
+
+BUTTON
+44
+225
+121
+258
+NIL
+dibujar
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 @#$#@#$#@
