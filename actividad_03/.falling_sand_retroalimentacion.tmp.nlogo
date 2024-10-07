@@ -1,67 +1,87 @@
+
+patches-own [
+  tipo
+]
+
+
+
+
 to setup
   clear-all
-
   ask patches [
-    set pcolor one-of [red yellow blue]
+    set tipo 0
+    if random-float 1.0 < prop_arena [set tipo 1]
   ]
-
+  colorear_celdas
   reset-ticks
 end
 
 
-to go
-  ;;celda al azar
-  ask one-of patches [
-    ;;otra celda
-    let mi_competidor one-of other patches
-    if tipo_interaccion = "local" [
-      set mi_competidor one-of neighbors
-    ]
 
-    ;; revisar si yo gano
-    ifelse le_gano? mi_competidor [
-      ;;sí gano, lo invado
-      ask mi_competidor [ set pcolor [pcolor] of myself ]
-    ][ ;; si el competidor gana
-      if [le_gano? myself ] of mi_competidor [ set pcolor [pcolor] of mi_competidor ]
-    ]
-
+to colorear_celdas
+  ask patches [
+    if tipo = 0 [ set pcolor blue   ] ;; tipo cero es aire y color azul
+    if tipo = 1 [ set pcolor brown ] ;; tipo uno es arena y color cafe
   ]
-
-  tick
 end
 
 
-to-report le_gano? [ el_otro ]
-  (ifelse
-    pcolor = red and [pcolor] of el_otro = blue and random-float 1.0 < p_r [report true]
-    pcolor = blue and [pcolor] of el_otro = yellow and random-float 1.0 < p_b [report true]
-    pcolor = yellow and [pcolor] of el_otro = red and random-float 1.0 < p_y [report true]
-    [report false ]
-  )
+to go
+  ;; Luis: aquí nota que la actualización sincrónica no es necesaria, de hecho
+  ;; la actualización asincrónica le da un poco de aleatoriedad al modelo que
+  ;; hace que se vea más realista
+  ask patches with [tipo = 1 ] [
+    ;; Luis: para que la arena no caiga infinitamente quité en settings
+    ;; la opción de que el mundo se enroque. Cuando uno hace eso tiene un
+    ;; error por el comando patch-at, esto pasa porque las celdas de hasta
+    ;; abajo ya no tienen a una celda vecina debajo de ellos, para eso
+    ;; en el ifelse también deber revisar si está definido o no, para eso se
+    ;; se revisa que la celda si esté definida revisando que no sea igual a nobody
+    (ifelse
+      patch-at 0 -1 != nobody and [tipo] of patch-at 0 -1  = 0 [ set tipo 0 ask patch-at 0 -1 [set tipo 1 ]]
+      patch-at 1 -1 != nobody and [tipo] of patch-at 1 -1  = 0 [ set tipo 0 ask patch-at 1 -1 [set tipo 1 ]]
+      patch-at -1 -1 != nobody and [tipo] of patch-at -1 -1  = 0 [set tipo 0 ask patch-at -1 -1 [set tipo 1 ]]
+
+    )
+  ]
+
+  colorear_celdas
+  tick
+end
+
+;; Luis: para que puedas picarle y que salga arena agrege este comando
+to dibujar
+  if mouse-down? [
+    ask patch mouse-xcor mouse-ycor [
+      ask patches in-radius 2 [
+        set tipo 1
+      ]
+    ]
+    colorear_celdas
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-647
-448
+828
+629
 -1
 -1
-13.0
+10.0
 1
 10
 1
 1
 1
 0
+0
+0
 1
-1
-1
--16
-16
--16
-16
+-30
+30
+-30
+30
 0
 0
 1
@@ -69,12 +89,12 @@ ticks
 30.0
 
 BUTTON
-85
-105
-148
-138
+0
+0
+0
+0
 NIL
-setup
+NIL
 NIL
 1
 T
@@ -86,10 +106,27 @@ NIL
 1
 
 BUTTON
-88
-154
-151
-187
+35
+49
+98
+82
+NIL
+setup\n
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+33
+105
+96
+138
 NIL
 go
 T
@@ -103,79 +140,19 @@ NIL
 1
 
 SLIDER
-14
-206
-186
-239
-p_r
-p_r
-0
-1
-1.0
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-15
-254
-187
-287
-p_b
-p_b
-0
-1
-1.0
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
 13
-305
+155
 185
-338
-p_y
-p_y
+188
+prop_arena
+prop_arena
 0
 1
-0.3
-0.01
+0.503
+0.001
 1
 NIL
 HORIZONTAL
-
-PLOT
-763
-10
-1222
-289
-poblaciones
-tiempo
-N
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -2674135 true "" "plot count patches with [pcolor = red]"
-"pen-1" 1.0 0 -13345367 true "" "plot count patches with [pcolor = blue ]"
-"pen-2" 1.0 0 -1184463 true "" "plot count patches with [pcolor = yellow]"
-
-CHOOSER
-16
-356
-154
-401
-tipo_interaccion
-tipo_interaccion
-"global" "local"
-0
 
 @#$#@#$#@
 @#$#@#$#@
