@@ -1,111 +1,169 @@
-
-patches-own [
-  tipo
+turtles-own [
+  estrategia
+  estrategia_siguiente
+  pago
 ]
 
 
+globals [
+  matriz_pagos
+  num_estrategias
+  num_jugadores
+  colores
+]
 
 
 to setup
   clear-all
-  ask patches [
-    set tipo 0
-    if random-float 1.0 < prop_arena [set tipo 1]
-  ]
-  colorear_celdas
+  init_pagos
+  init_jugadores
+  init_grafica
+  colorear_jugadores
   reset-ticks
+  actualizar_grafica
 end
 
 
+to init_pagos
+  set matriz_pagos read-from-string pagos
+  set num_estrategias length matriz_pagos
+  ;; map es funcion que mapea [funcion](lista a mapear)
+  set colores map[k -> 15 + 30 * k ] (range num_estrategias)
+end
 
-to colorear_celdas
-  ask patches [
-    if tipo = 0 [ set pcolor blue   ] ;; tipo cero es aire y color azul
-    if tipo = 1 [ set pcolor brown ] ;; tipo uno es arena y color cafe
+to init_jugadores
+  let distribucion_inicial read-from-string num_jugadores_por_estrategia
+  if length distribucion_inicial != length matriz_pagos [
+    user-message "El número de elementos de num_jugadores_por_estrategia debe ser igual al número de filas de la matriz de pagos"
+  ]
+  let i 0
+  foreach distribucion_inicial [
+    j ->
+    create-turtles j [
+      setxy random-xcor random-ycor
+      set shape "circle"
+      set size 0.75
+      set estrategia i
+      set estrategia_siguiente estrategia
+      set pago 0
+    ]
+    set i i + 1
+  ]
+  set num_jugadores count turtles
+end
+
+
+to init_grafica
+  set-current-plot "Frecuencia estrategias"
+  foreach (range num_estrategias )[
+    i ->
+    create-temporary-plot-pen ( word i )
+    set-plot-pen-color item i colores
   ]
 end
+
+
+to colorear_jugadores
+  ask turtles [
+    set color item estrategia colores
+  ]
+end
+
 
 
 to go
-  ;; Luis: aquí nota que la actualización sincrónica no es necesaria, de hecho
-  ;; la actualización asincrónica le da un poco de aleatoriedad al modelo que
-  ;; hace que se vea más realista
-  ask patches with [tipo = 1 ] [
-    ;; Luis: para que la arena no caiga infinitamente quité en settings
-    ;; la opción de que el mundo se enroque. Cuando uno hace eso tiene un
-    ;; error por el comando patch-at, esto pasa porque las celdas de hasta
-    ;; abajo ya no tienen a una celda vecina debajo de ellos, para eso
-    ;; en el ifelse también deber revisar si está definido o no, para eso se
-    ;; se revisa que la celda si esté definida revisando que no sea igual a nobody
-    (ifelse
-      patch-at 0 -1 != nobody and [tipo] of patch-at 0 -1  = 0 [ set tipo 0 ask patch-at 0 -1 [set tipo 1 ]]
-      patch-at 1 -1 != nobody and [tipo] of patch-at 1 -1  = 0 [ set tipo 0 ask patch-at 1 -1 [set tipo 1 ]]
-      patch-at -1 -1 != nobody and [tipo] of patch-at -1 -1  = 0 [set tipo 0 ask patch-at -1 -1 [set tipo 1 ]]
-
-    )
+  ask turtles [jugar]
+  ask turtles [
+    if (random-float 1 < prob_cambio ) [ cambiar_estrategia ]
   ]
-
-  colorear_celdas
+  ask turtles [
+    set estrategia estrategia_siguiente
+  ]
+  colorear_jugadores
   tick
+  actualizar_grafica
 end
 
-;; Luis: para que puedas picarle y que salga arena agrege este comando
-to dibujar
-  if mouse-down? [
-    ask patch mouse-xcor mouse-ycor [
-      ask patches in-radius 2 [
-        set tipo 1
-      ]
+
+
+to jugar
+  let otro_jugador one-of other turtles
+  set pago item ( [estrategia] of otro_jugador  ) ( item estrategia matriz_pagos )
+end
+
+
+to cambiar_estrategia
+  ifelse random-float 1 < ruido [
+    set estrategia_siguiente ( random num_estrategias )
+  ][
+    let jugador_observado one-of other turtles
+    if [pago] of jugador_observado > pago [
+      set estrategia_siguiente [estrategia] of jugador_observado
     ]
-    colorear_celdas
   ]
 end
+
+
+to actualizar_grafica
+  let nums_estrategias ( range num_estrategias )
+  let frec_estrategias map [  n ->
+    ( count turtles with [ estrategia = n ] )/ (count turtles )
+  ] nums_estrategias
+
+  set-current-plot "Frecuencia estrategias"
+  foreach nums_estrategias [
+    n ->
+    set-current-plot-pen (word n)
+    plotxy ticks (item n frec_estrategias )
+
+  ]
+  set-plot-y-range 0 1
+end
+
+
+
+
+
+
+
+
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+277
 10
-828
-629
+714
+448
 -1
 -1
-10.0
+13.0
 1
 10
 1
 1
 1
 0
-0
-0
 1
--30
-30
--30
-30
-0
-0
+1
+1
+-16
+16
+-16
+16
+1
+1
 1
 ticks
 30.0
 
-SWITCH
-0
-0
-0
-0
-NIL
-NIL
-1
-1
--1000
-
 BUTTON
-35
-49
-98
 82
+27
+145
+60
 NIL
-setup\n
+setup
 NIL
 1
 T
@@ -117,10 +175,10 @@ NIL
 1
 
 BUTTON
-33
-105
-96
-138
+81
+83
+144
+116
 NIL
 go
 T
@@ -133,20 +191,74 @@ NIL
 NIL
 1
 
+INPUTBOX
+8
+133
+249
+251
+pagos
+[ [ 0  -1   ]\n  [ 1  -1000] ]
+1
+1
+String (reporter)
+
+INPUTBOX
+8
+259
+249
+328
+num_jugadores_por_estrategia
+[ 500 500  ]
+1
+0
+String (reporter)
+
 SLIDER
-13
-155
-185
-188
-prop_arena
-prop_arena
+45
+346
+217
+379
+prob_cambio
+prob_cambio
 0
 1
-0.503
-0.001
+0.13
+0.01
 1
 NIL
 HORIZONTAL
+
+SLIDER
+46
+393
+218
+426
+ruido
+ruido
+0
+1
+0.0
+0.01
+1
+NIL
+HORIZONTAL
+
+PLOT
+849
+47
+1086
+223
+Frecuencia estrategias
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
 
 @#$#@#$#@
 @#$#@#$#@
