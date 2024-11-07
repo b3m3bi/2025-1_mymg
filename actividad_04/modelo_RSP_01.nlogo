@@ -1,3 +1,9 @@
+patches-own [
+  vecinos_rojos
+  vecinos_amarillos
+  vecinos_azules
+]
+
 to setup
   clear-all
 
@@ -10,12 +16,22 @@ end
 
 
 to go
+  ;; Luis: Tu autómata funciona bien, solo que hiciste actualizaciones asincrónicas.
+  ;; Con tu forma de actualización asincrónica de hecho se obtiene una visualización
+  ;; más bonita visualmente, pero para que fuera un autómata clásico debía ser sincrónica.
+  ;; Para asegurarte de que sean sincrónicas las actualizaciones debes separar el
+  ;; contar vecinos de la actualización de color en dos bloques ask patches diferentes.
+  ;; Y como las variables definidas con let solo tienen un "scope" dentro del mismo bloque
+  ;; uno debe definir las variables como propiedades de las celdas.
+
   ;;todas las celdas al mismo tiempo
   ask patches [
-    let vecinos_rojos count neighbors with [ pcolor = red  ]
-    let vecinos_amarillos count neighbors with [ pcolor = yellow  ]
-    let vecinos_azules count neighbors with [ pcolor = blue  ]
+    set vecinos_rojos count neighbors with [ pcolor = red  ]
+    set vecinos_amarillos count neighbors with [ pcolor = yellow  ]
+    set vecinos_azules count neighbors with [ pcolor = blue  ]
+  ]
 
+  ask patches[
     (ifelse
       pcolor = blue and vecinos_rojos >= criterio_vecinos [ set pcolor red ] ;;rojo gana azul
       pcolor = yellow and vecinos_azules >= criterio_vecinos [ set pcolor blue ] ;; azul gana amarillo
@@ -26,7 +42,6 @@ to go
 
   tick
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -49,8 +64,8 @@ GRAPHICS-WINDOW
 100
 -100
 100
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -98,7 +113,7 @@ criterio_vecinos
 criterio_vecinos
 1
 8
-3.0
+2.0
 1
 1
 NIL
